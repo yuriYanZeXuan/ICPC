@@ -1,7 +1,7 @@
 #include<bits/stdc++.h>
 using namespace std;
 const int maxn=10000;
-    int n;
+int n;
 struct block{
     int x,y,h;
     
