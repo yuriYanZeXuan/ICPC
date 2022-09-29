@@ -337,11 +337,11 @@ User can trigger auto-complete suggestions for emoji by pressing `ESC` key, or t
 
 ## 15. 其他
 
-==高亮==: 这是一个 *高亮* 的 **文本**。
+== 高亮 == : 这是一个 *高亮* 的 **文本**。
 
 [^footnote]: 这是一个 *注脚* 的 **文本**。
 
-[^ footnote2]: 这是另一个 *注脚* 的 **文本**。
+[^footnote2]: 这是另一个 *注脚* 的 **文本**。
 
 [^LaTeX]: 支持 **LaTeX** 编辑显示支持，例如：$\sum_{i=1}^n a_i=0$， 访问 [MathJax][1] 参考更多使用方法。
 
