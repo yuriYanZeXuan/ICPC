@@ -1,32 +1,46 @@
 #include<bits/stdc++.h>
 using namespace std;
 const int maxn=1000000+10;
-deque<int> dq1,dq2;
 char str[maxn];
+struct sk{
+    int f,v;
+    bool operator<(const sk& t){
+        return v<t.v;
+    }
+}S[maxn];
 int main()
 {
-    cout<<"hi"<<endl;
-    // int t;
-    // cin>>t;
-    // while(t--){
-    //     // string s;
-    //     // stringstream ss,ss2;
-    //     int n,type,c;
-    //     cin>>n;
-    //     cout<<"hellow"<<endl;
-    //     // getline(cin,s);
-    //     // getline(cin,s);
-    //     // for(int i=0;i<n;i++){
-    //     //     ss>>type;
-    //     //     ss2>>c;
-    //     //     if(type){
-    //     //         dq2.push_back(c);
-    //     //     }
-    //     //     else{
-    //     //         dq1.push_back(c);
-    //     //     }
-    //     // }
-
-    // }
+    int t;
+    cin>>t;
+    while(t--){
+        long long ans=0;
+        string s;
+        int n,type;
+        cin>>n;
+        for(int i=0;i<n;i++){
+            cin>>S[i].f;
+        }
+        for(int i=0;i<n;i++){
+            cin>>S[i].v;
+        }
+        sort(S,S+n);
+        ans=S[0].v;
+        type=S[0].f;
+        vector<int> v[2];
+        for(int i=1;i<n;i++){
+            v[S[i].f].push_back(S[i].v);
+        }
+        int flag=0;
+        while(!v[!type].empty()){
+            ans+=v[!type].back()*2;
+            v[!type].pop_back();
+            type=!type;
+        }
+        while(!v[type].empty()){
+            ans+=v[type].back();
+            v[type].pop_back();
+        }
+        cout<<ans<<endl;
+    }
     return 0;
 }
