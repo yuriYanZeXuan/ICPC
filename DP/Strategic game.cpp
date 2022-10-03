@@ -44,7 +44,7 @@ int main(){
             int x,m,p;
             scanf("%d:(%d)",&x,&m);
             for(int j=0;j<m;j++)
-            {
+             {
                 scanf("%d",&p);
                 g[x].push_back(p);
                 fa[p]=1;
