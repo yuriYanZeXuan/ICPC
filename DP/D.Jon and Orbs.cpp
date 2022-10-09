@@ -2,6 +2,7 @@
 using namespace std;
 double dp[8000][1001];
 int main(){
+    //9C11D13B
     int k,q;
     cin>>k>>q;
     memset(dp,0,sizeof(dp));
