@@ -14,11 +14,13 @@ struct string_fix
         len=strlen(str);
     }
     void destroy(){
+        //先清除，再销毁
         clear();
         len=0;
     }
     void clear(){
         memset(str,0,sizeof(str));
+        //将所有位置0
     }
     int getlen(){
         return len;
@@ -28,16 +30,16 @@ struct string_fix
         // //利用模式串T的next函数求T在主串S中第pos个字符之后的位置
         int i=0,j=-1;
         nxt[0]=-1;
-        while(i<T.len){
+        while(i<T.len){//初始化nxt数组
             if(j==-1||T.str[i]==T.str[j]){
-                ++i,++j;
+                ++i,++j;//匹配成功,i,j都增加
                 nxt[i]=j;
             }else{
-                j=nxt[j];
+                j=nxt[j];//失配，j借助nxt向前跳
             }
         }
         i=0,j=0;   
-        while(i<len&&j<len){
+        while(i<len&&j<len){//kmp算法
             if(j==-1||str[i]==T.str[j]){
                 ++i,++j;if(j>=T.len){
                     cout<<"break"<<endl;
@@ -45,18 +47,17 @@ struct string_fix
                 }
             }else{
                 j=nxt[j];
-                
             }
         }
-        if(j>=T.len)return i-T.len;
+        if(j>=T.len)return i-T.len;//指针到达模式串的最后，表明匹配成功
         else return -1;
     }
 
     string_fix getsubstr(int pos,int length){
         string_fix ans;
-        ans.len=length;
+        ans.len=length;//从指定位置，获取一定长度的字串
         for(int i=pos;i<pos+length;i++){
-            ans.str[i-pos]=str[i];
+            ans.str[i-pos]=str[i];//将指定位置后的字符逐个复制到返回值中
         }
         return ans;
     }
@@ -73,7 +74,7 @@ struct string_fix
             for(int i=pos,j=0;j<V.len;i++,j++){
                 S->str[i]=V.str[j];
             }
-            S->len+=delta;
+            S->len+=delta;//替换S时更新长度
         }
     }
     void print(){
@@ -85,8 +86,10 @@ struct string_fix
     }
     string_fix merge (string_fix T)
     {
+        //合并字符串
         string_fix res;
         res.len=T.len+this->len;
+        //新字符串的长度是两个字符串的和
         memcpy(res.str,this->str,this->len);
         memcpy(res.str+len,T.str,T.len);
         return res;
@@ -100,11 +103,19 @@ struct string_flt
         printf("请输入串\n");
         scanf("%s",st);
         len=strlen(st);
+        //用临时字符串做缓冲区
         str=(char*)malloc(sizeof(char)*len);
+        //声明空间
+        if(str==NULL)
+        {
+            cout<<"分配空间失败！\n"<<endl;
+            exit(0);
+        }
         memcpy(str,st,sizeof(char)*len);
+        //初始化
     }
     void destroy(){
-        clear();
+        clear();//清空后将指针释放
         free(str);
         len=0;
     }
@@ -143,7 +154,7 @@ struct string_flt
                 
             }
         }
-        if(j>=T.len)return i-T.len;
+        if(j>=T.len)return i-T.len;//指针到达模式串的最后，表明匹配成功
         else return -1;
     }
 
@@ -167,6 +178,7 @@ struct string_flt
         while((pos=S->kmp(T))!=-1){
             //先移位,pos之后全部后移delta
             int delta=V.len-T.len;
+            S->str=(char *)realloc(S->str,S->len+delta);//扩充空间
             char *s=(char*)malloc(sizeof(char)*(S->len-pos));
             memcpy(s,S->str+pos+T.len,S->len-pos-T.len);
             memcpy(S->str+pos+V.len,s,S->len-pos-T.len);
@@ -175,6 +187,7 @@ struct string_flt
             }
             S->len+=delta;
         }
+        
     }
     void print(){
         cout<<"字符串长度"<<len<<endl;
@@ -185,16 +198,25 @@ struct string_flt
     }
     string_flt merge (string_flt T)
     {
+        // 合并字符串
         string_flt res;
         res.len=T.len+this->len;
+        //新字符串的长度是两个字符串的和
         res.str=(char *)malloc(sizeof(char)*(res.len));
+        //为返回值声明空间
+        if(res.str==NULL){
+            cout<<"分配空间失败"<<endl;
+            exit(0);
+        }
         memcpy(res.str,this->str,this->len);
         memcpy(res.str+len,T.str,T.len);
+        //将对应段的数据粘贴
         return res;
     }
 };
 
 int main(){
+    //初始化nxt数组
     memset(nxt,0,sizeof(nxt));
     string_flt s1,s2,s3,s4;
     s1.init();
