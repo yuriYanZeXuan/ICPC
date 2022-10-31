@@ -41,8 +41,9 @@ struct string_fix
         i=0,j=0;   
         while(i<len&&j<len){//kmp算法
             if(j==-1||str[i]==T.str[j]){
-                ++i,++j;if(j>=T.len){
-                    cout<<"break"<<endl;
+                ++i,++j;
+                if(j>=T.len){
+                    // cout<<"break"<<endl;
                     break;//只找第一次出现位置
                 }
             }else{
@@ -52,7 +53,6 @@ struct string_fix
         if(j>=T.len)return i-T.len;//指针到达模式串的最后，表明匹配成功
         else return -1;
     }
-
     string_fix getsubstr(int pos,int length){
         string_fix ans;
         ans.len=length;//从指定位置，获取一定长度的字串
@@ -61,24 +61,8 @@ struct string_fix
         }
         return ans;
     }
-
-    void Replace(string_fix *S,string_fix T,string_fix V){
-        //用 V 替换主串 S 中出现的所有与 T 相等的不重叠的子串
-        int pos;
-        while((pos=S->kmp(T))!=-1){
-            //先移位,pos之后全部后移delta
-            int delta=V.len-T.len;
-            char *s=(char*)malloc(sizeof(char)*(S->len-pos));
-            memcpy(s,S->str+pos+T.len,S->len-pos-T.len);
-            memcpy(S->str+pos+V.len,s,S->len-pos-T.len);
-            for(int i=pos,j=0;j<V.len;i++,j++){
-                S->str[i]=V.str[j];
-            }
-            S->len+=delta;//替换S时更新长度
-        }
-    }
     void print(){
-        cout<<"字符串长度"<<len<<endl;
+        // cout<<"字符串长度"<<len<<endl;
         for(int i=0;i<len;i++){
             cout<<str[i];
         }
@@ -91,10 +75,25 @@ struct string_fix
         res.len=T.len+this->len;
         //新字符串的长度是两个字符串的和
         memcpy(res.str,this->str,this->len);
-        memcpy(res.str+len,T.str,T.len);
+        memcpy(res.str+this->len,T.str,T.len);
         return res;
     }
 };
+string_fix Replace(string_fix *S,string_fix T,string_fix V){
+    //用 V 替换主串 S 中出现的所有与 T 相等的不重叠的子串
+    int pos,prepos=0;
+    string_fix res;
+    res.len=0;
+    while((pos=S->kmp(T))!=-1){
+        //先移位,pos之后全部后移delta
+        res=res.merge(S->getsubstr(prepos,pos-prepos));
+        memset((S->str+pos),0,sizeof(char)*T.len);//清空对应位置模式串，防止重复匹配
+        res=res.merge(V);
+        prepos=pos+T.len;
+    }
+    res=res.merge(S->getsubstr(prepos,S->len-prepos));//将尾字符串衔接
+    return res;
+}
 struct string_flt
 {
     int len;
@@ -146,7 +145,7 @@ struct string_flt
         while(i<len&&j<len){
             if(j==-1||str[i]==T.str[j]){
                 ++i,++j;if(j>=T.len){
-                    cout<<"break"<<endl;
+                    // cout<<"break"<<endl;
                     break;//只找第一次出现位置
                 }
             }else{
@@ -157,40 +156,22 @@ struct string_flt
         if(j>=T.len)return i-T.len;//指针到达模式串的最后，表明匹配成功
         else return -1;
     }
-
     string_flt getsubstr(int pos,int length){
         string_flt ans;
-        ans.len=0;
         if(pos+length>len){
             printf("字串越界！返回值无效\n");
             return ans;
         }
         ans.len=length;
+        ans.str=(char*)malloc(sizeof(char)*length);
         for(int i=pos;i<pos+length;i++){
             ans.str[i-pos]=str[i];
         }
         return ans;
     }
-
-    void Replace(string_flt *S,string_flt T,string_flt V){
-        //用 V 替换主串 S 中出现的所有与 T 相等的不重叠的子串
-        int pos;
-        while((pos=S->kmp(T))!=-1){
-            //先移位,pos之后全部后移delta
-            int delta=V.len-T.len;
-            S->str=(char *)realloc(S->str,S->len+delta);//扩充空间
-            char *s=(char*)malloc(sizeof(char)*(S->len-pos));
-            memcpy(s,S->str+pos+T.len,S->len-pos-T.len);
-            memcpy(S->str+pos+V.len,s,S->len-pos-T.len);
-            for(int i=pos,j=0;j<V.len;i++,j++){
-                S->str[i]=V.str[j];
-            }
-            S->len+=delta;
-        }
-        
-    }
+    
     void print(){
-        cout<<"字符串长度"<<len<<endl;
+        // cout<<"字符串长度"<<len<<endl;
         for(int i=0;i<len;i++){
             cout<<str[i];
         }
@@ -214,7 +195,21 @@ struct string_flt
         return res;
     }
 };
-
+string_flt Replace(string_flt *S,string_flt T,string_flt V){
+    //用 V 替换主串 S 中出现的所有与 T 相等的不重叠的子串
+    int pos,prepos=0;
+    string_flt res;
+    res.len=0;
+    while((pos=S->kmp(T))!=-1){
+        //先移位,pos之后全部后移delta
+        res=res.merge(S->getsubstr(prepos,pos-prepos));
+        memset((S->str+pos),0,sizeof(char)*T.len);//清空对应位置模式串，防止重复匹配
+        res=res.merge(V);
+        prepos=pos+T.len;
+    }
+    res=res.merge(S->getsubstr(prepos,S->len-prepos));//将尾字符串衔接
+    return res;
+}
 int main(){
     //初始化nxt数组
     memset(nxt,0,sizeof(nxt));
@@ -227,7 +222,7 @@ int main(){
     // s3.print();
     int pos=s1.kmp(s2);
     cout<<"子串第一次出现位置"<<pos<<endl;
-    s1.Replace(&s1,s2,s3);
+    s1=Replace(&s1,s2,s3);
     printf("替换结果\n");
     s1.print();
     printf("s1+s2=\n");
