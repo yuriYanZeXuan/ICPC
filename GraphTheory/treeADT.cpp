@@ -118,6 +118,7 @@ void diff(Node* T){
     diff(T->rch);
 }
 int main(){
+    cout<<"hi"<<endl;
     build();
     preTraverse(rt);
     printf("请输入要找的val\n");
