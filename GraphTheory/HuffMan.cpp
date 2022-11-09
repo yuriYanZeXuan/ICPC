@@ -18,7 +18,11 @@ typedef struct{
 	long w; 
 	int parent,lchild,rchild;
 } HTNode; 
-
+struct LinkNode{
+	unsigned char id;
+	long w;
+	LinkNode *parent,*lchild,*rchild;
+}*rt;
 typedef struct{
 	unsigned code; //前面都是0，最后len位是编码 
 	int len;   //编码长度 
@@ -31,12 +35,16 @@ void printHtree1(HTNode ht[]); //函数声明
 
 /*** 以下代码哈夫曼树生成 ***/ 
 //构造哈夫曼树/二叉树,输入长度为n=256的权向量w（每个字符出现的次数） ，返回树根的下标 
-int createHTree(HTNode ht[], long *w){
+int createHTree(LinkNode *ht, long *w){
 	long allw=0;
 	int numZero = 0; 
+	// if(!ht){
+	// 	printf("申请空间失败!");
+	// 	exit(0);
+	// }
 	for(int i=0;i<m;++i){
 		ht[i].id = i;
-		ht[i].parent = ht[i].lchild = ht[i].rchild = -1;
+		ht[i].parent = ht[i].lchild = ht[i].rchild = NULL;
 		ht[i].w = 0; 
 		if (i<n){ 
 			ht[i].w = w[i];
@@ -53,7 +61,7 @@ int createHTree(HTNode ht[], long *w){
 		for(j=0;j<i;j++){
 			if (ht[j].w == 0) //忽略权值为0的结点 
 				continue;
-			if (ht[j].parent == -1)
+			if (!ht[j].parent)
 				if (ht[j].w < min1){
 					pos2=pos1;
 					min2=min1;
@@ -67,27 +75,27 @@ int createHTree(HTNode ht[], long *w){
 					} 	
 				} 
 		}//内层for结束，找到pos1,pos2最小的两个权值，准备构造非叶节点  
-		ht[i].lchild = pos1; //小权值为左孩子
-		ht[i].rchild = pos2;
+		ht[i].lchild = ht+pos1; //小权值为左孩子
+		ht[i].rchild = ht+pos2;
 		ht[i].w = min1+min2;
-		ht[pos1].parent = ht[pos2].parent =i;
+		ht[pos1].parent = ht[pos2].parent =ht+i;
 		i++;
 	}
 	return m-numZero-1;//返回根的下标 
 }
 
 //给定二叉树（结构体数组首地址）t以及根结点的下标ridx，遍历二叉树 (先序遍历） 
-void printHtree0(HTNode t[],int ridx){
-	if (ridx>=0){ //递归出口 
+void printHtree0(LinkNode *t,int ridx){
+	if (ridx>0){ //递归出口 
 		if (t[ridx].w>0)
 			printf("%3d->%5d\n",ridx<n?t[ridx].id:t[ridx].id+n,t[ridx].w);
-		printHtree0(t,t[ridx].lchild);
-		printHtree0(t,t[ridx].rchild); 
+		printHtree0(t,(t+ridx)->lchild-t);
+		printHtree0(t,(t+ridx)->rchild-t); 
 	}
 } 
 
 //直接当数组打印出来，调试用 
-void printHtree1(HTNode ht[]){
+void printHtree1(LinkNode *ht){
 	printf("\n哈夫曼树(数组次序)：\n"); 
 	for(int i=0;i<m;++i)
 		if (i<n)
@@ -127,19 +135,19 @@ unsigned char *parseFile(const char filename[], long *w,long *fsize){
 }
 
 //输入任何字符c，得到它的哈夫曼编码, 被genCodes()调用 
-void getCode(HTNode ht[], int c,unsigned *code1, int *clen1){	
+void getCode(LinkNode *ht, int c,unsigned *code1, int *clen1){	
 	int clen = 0;        //编码长度 
 	unsigned code = 0;   //编码 
 
 	int size = sizeof(code);  //编码的最大bits数 
 	unsigned mask = 1<<(size*8-1); //最高位为1其它为0，用来设置最高位为1 
 	
-	int parent = ht[c].parent;
-	while(parent>=0){
+	LinkNode* parent = ht[c].parent;
+	while(parent){
 		code = code >> 1;
-		ht[parent].lchild==c?code:code|= mask; //如果是右孩子，那么最高位设置为1，否则就是0 
+		parent->lchild-ht==c?code:code|= mask; //如果是右孩子，那么最高位设置为1，否则就是0 
 		clen++;   
-		c = parent;
+		c = parent-ht;
 		parent = ht[c].parent;
 	}
 
@@ -151,7 +159,7 @@ void getCode(HTNode ht[], int c,unsigned *code1, int *clen1){
 }
 
 //从哈夫曼树ht生成完整的编码表hc，输出hc为encode()的输入参数 
-void genHCodes(HCode hc[], HTNode ht[]){
+void genHCodes(HCode hc[], LinkNode *ht){
 	for(int i=0;i<n;++i)
 		if (ht[i].w>0)
 			getCode(ht,i,&(hc[i].code),&(hc[i].len));
@@ -190,7 +198,21 @@ void encode(unsigned char *orgi, long olen, unsigned char *newc, long *nlen, HCo
 } 
 
 //生成和保存压缩文件,指定文件名fout，将所用的哈夫曼树存入文件 
-void zip(char fout[],HTNode ht[],int root,HCode hc[],unsigned char *content,long fsize){
+void zip(char fin[], char fout[]){
+	LinkNode *ht=(LinkNode*)malloc(sizeof(LinkNode)*m);   //结构体数组，表示哈夫曼树 : id,w,parent,lchild,rchild，用于生成编码表和解压 
+	
+	HCode hc[n];    //结构体数组，表示哈夫曼编码表 :code,len，用于编码文件 
+	
+	/*** 读取文件，分析文件字符出现规律，构建哈夫曼树，生成哈夫曼编码表 ***/ 
+	char *infile=fin; 
+	long wDist[256]; //保存字符的分布（字符在文件中出现的次数） 
+	long fsize;      //文件长度 
+    //获取文件内容，分析待压缩文件，返回权值向量wDist,文件内容content和长度fsize 
+	unsigned char *content = parseFile(infile,wDist,&fsize);			 
+	int root = createHTree(ht,wDist); //root是哈夫曼树ht的根结点的下标 
+	
+	genHCodes(hc,ht);//生成完整的编码表,用于编码文件 
+	// print
 	unsigned char *zipContent; //编码后的内容	
 	long zipsize;//压缩后文件大小 
 	zipContent = (unsigned char *)malloc(sizeof(unsigned char)*(fsize+10000));//压缩后的文件可能更大，考虑将fsize扩大一点 
@@ -205,12 +227,14 @@ void zip(char fout[],HTNode ht[],int root,HCode hc[],unsigned char *content,long
         printf("无法打开写入文件!\n");
         exit(0);
     }
-    long ht_size = sizeof(HTNode)*m;      //哈夫曼编码表的大小 
+    long ht_size = sizeof(LinkNode)*m;      //哈夫曼编码表的大小 
     fwrite(&ht_size,sizeof(ht_size),1,fp);//保存哈夫曼树的大小
 	fwrite(&zipsize,sizeof(zipsize),1,fp);//保存编码内容的大小 
 	fwrite(&fsize,sizeof(fsize),1,fp);    //保存原始内容的大小 
 	fwrite(&root,sizeof(root),1,fp);      //保存哈夫曼树根节点的下标 
-    fwrite(ht,sizeof(HTNode),m,fp);       //保存哈夫曼树 ，解码要用到 
+	fwrite(&ht,sizeof(ht),1,fp);
+	printf("root=%d\n",root);
+    fwrite(ht,sizeof(LinkNode),m,fp);       //保存哈夫曼树 ，解码要用到 
     fwrite(zipContent,sizeof(unsigned char),zipsize,fp);//保存编码后的内容 
 	fclose(fp); 
 	
@@ -227,15 +251,28 @@ void unzip(char zfile[],char ofile[]){
     }
     long ht_size1,zipsize1,fsize1;
     int root; //树的根结点下标 
+	LinkNode* rtNode;
     fread(&ht_size1,sizeof(ht_size1),1,fp); //哈夫曼树的大小(字节数） 
     fread(&zipsize1,sizeof(zipsize1),1,fp); //压缩后内容的大小 
     fread(&fsize1,sizeof(fsize1),1,fp);     //被压缩内容的大小 
     fread(&root,sizeof(root),1,fp);         //哈夫曼树根的下标 
-
+	fread(&rtNode,sizeof(rtNode),1,fp);
+	printf("read root=%d\n",root);
 	unsigned char *zcontent = (unsigned char *)malloc(zipsize1);//存放读取的编码数据 
 	unsigned char *ocontent = (unsigned char *)malloc(fsize1);//解码后的数据 
-	HTNode ht1[m];
+	LinkNode *ht1=(LinkNode*)malloc(sizeof(LinkNode)*m);
 	fread(ht1,ht_size1,1,fp);//读取哈夫曼树 
+	// printf("htsize1=%d\n",ht_size1/sizeof(LinkNode));
+	for(LinkNode *node=ht1;node<ht1+m;node++){
+		if(node->lchild){
+			node->lchild=ht1+((node->lchild)-rtNode);
+			// printf("work");
+		}
+		if(node->rchild)
+			node->rchild=ht1+((node->rchild)-rtNode);
+		if(node->parent)
+			node->parent=ht1+((node->parent)-rtNode);
+	}
 	fread(zcontent,zipsize1,1,fp); //读取编码数据
 	fclose(fp);
 
@@ -251,7 +288,7 @@ void unzip(char zfile[],char ofile[]){
 		j =128; //10000000 		
 		while (j>0){
 			if ((zcontent[k] & j)>0){ //向右走 1
-				if (ht1[idx].rchild==-1){
+				if (!ht1[idx].rchild){
 					ocontent[i++] = ht1[idx].id;					
 					idx = root;//解码了下一个字符的第一个bit 
 					fprintf(fp,"%c",ocontent[i-1]);
@@ -259,9 +296,9 @@ void unzip(char zfile[],char ofile[]){
 						break;
 					j=j<<1;
 				}else
-					idx = ht1[idx].rchild;				
+					idx = ht1[idx].rchild-ht1;				
 			}else{//向左走 0
-				if (ht1[idx].lchild==-1){
+				if (!ht1[idx].lchild){
 					ocontent[i++] = ht1[idx].id;
 					idx = root;//解码了下一个字符的第一个bit 
 					fprintf(fp,"%c",ocontent[i-1]);
@@ -269,7 +306,7 @@ void unzip(char zfile[],char ofile[]){
 						break;
 					j=j<<1;
 				}else
-					idx = ht1[idx].lchild;	
+					idx = ht1[idx].lchild-ht1;	
 			}
 			j=j>>1; //j控制while循环8次，求出zcontent[k]的每一位 
 		}
@@ -282,35 +319,64 @@ void unzip(char zfile[],char ofile[]){
 	free(zcontent);
 	printf("文件 %s 已经成功解压为 %s ！\n",zfile,ofile);
 }
-
+int check(char file1[], char file2[]){	// 返回1说明文件一样，返回0说明文件不一样
+	FILE *fp1 = fopen(file1,"r"), *fp2 = fopen(file2,"r");
+	unsigned fsize1,fsize2;
+	fseek(fp1, 0, SEEK_END);	fseek(fp2, 0, SEEK_END);
+	fsize1 = ftell(fp1);		fsize2 = ftell(fp2);
+	rewind(fp1);				rewind(fp2);
+	if(fsize1 != fsize2) return 0;
+	char c1,c2;
+	for(unsigned i = 0; i < fsize1; ++i){
+		fread(&c1,1,1,fp1);		fread(&c2,1,1,fp2);
+		if(c1 != c2) return printf("at fsize = %d, c1 is %d, c2 is %d\n",i,c1,c2);
+	}
+	fclose(fp1);				fclose(fp2);
+	return 1;
+}
 int main(){
-	HTNode ht[m];   //结构体数组，表示哈夫曼树 : id,w,parent,lchild,rchild，用于生成编码表和解压 
-	HCode hc[n];    //结构体数组，表示哈夫曼编码表 :code,len，用于编码文件 
+	// LinkNode *ht=(LinkNode*)malloc(sizeof(LinkNode)*m);   //结构体数组，表示哈夫曼树 : id,w,parent,lchild,rchild，用于生成编码表和解压 
 	
-	/*** 读取文件，分析文件字符出现规律，构建哈夫曼树，生成哈夫曼编码表 ***/ 
-	char infile[]="data.txt"; 
-	long wDist[256]; //保存字符的分布（字符在文件中出现的次数） 
-	long fsize;      //文件长度 
-    //获取文件内容，分析待压缩文件，返回权值向量wDist,文件内容content和长度fsize 
-	unsigned char *content = parseFile(infile,wDist,&fsize);			 
-	int root = createHTree(ht,wDist); //root是哈夫曼树ht的根结点的下标 
-	genHCodes(hc,ht);//生成完整的编码表,用于编码文件 
+	// HCode hc[n];    //结构体数组，表示哈夫曼编码表 :code,len，用于编码文件 
+	
+	// /*** 读取文件，分析文件字符出现规律，构建哈夫曼树，生成哈夫曼编码表 ***/ 
+	// char infile[]="Timer_RTL.png"; 
+	// long wDist[256]; //保存字符的分布（字符在文件中出现的次数） 
+	// long fsize;      //文件长度 
+    // //获取文件内容，分析待压缩文件，返回权值向量wDist,文件内容content和长度fsize 
+	// unsigned char *content = parseFile(infile,wDist,&fsize);			 
+	// int root = createHTree(ht,wDist); //root是哈夫曼树ht的根结点的下标 
+	
+	// genHCodes(hc,ht);//生成完整的编码表,用于编码文件 
 	
 	//下面的代码用于测试哈夫曼树 
-	//printHtree1(ht); //将哈夫曼树按数组打印出来 	
-	//printHtree0(ht,root); //先序遍历哈夫曼树 
-	//saveTree(ht,root,"aa1.html"); //图形展示哈夫曼树 
+	// printHtree1(ht); //将哈夫曼树按数组打印出来 	
+	// printHtree0(ht,root); //先序遍历哈夫曼树 
+	// saveTree(ht,root,"aa1.html"); //图形展示哈夫曼树 
 
 	//编码，压缩文件,写入文件 fout
-	char zfile[256]="my.lzip"; 
-	zip(zfile,ht,root,hc,content,fsize);
+	// char zfile[256]="my.lzip"; 
+	// zip(zfile,ht,root,hc,content,fsize);
 
 	
 /*************************** 以下为解码内容 ****************************/
-	char ofile[256]="ndata.txt";
-	unzip(zfile,ofile); 
+	// char ofile[256]="ndata.png";
+	// unzip(zfile,ofile); 
 	
-	free(content);
+	// free(content);
+
+	// 压缩一个图片
+	zip("pic.png","pic.png.myzip");
+	unzip("pic.png.myzip","myout_pic.png");
+	printf("%d\n",check("pic.png","myout_pic.png"));
+	// 压缩一个pdf
+	zip("lab6.pdf","lab6.pdf.myzip");
+	unzip("lab6.pdf.myzip","myout_lab6.pdf");
+	printf("%d\n",check("lab6.pdf","myout_lab6.pdf"));
+	// 压缩一个文件
+	zip("test","test.myzip");
+	unzip("test.myzip","myout_test");
+	printf("%d\n",check("test","myout_test"));
 	return 1; 
 } 
 
