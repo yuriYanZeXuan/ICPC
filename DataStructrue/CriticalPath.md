@@ -1,0 +1,46 @@
+```C++
+void critical_path(ALGraph *G){
+    if(Topologic_Sort(G,topol)==-1){
+        printf("存在回路错误")
+    }
+    else{
+        for(j=0;j<G->vexnum;j++){
+            ve[j]=0;//时间最早发生时间初始化
+        
+            for(m=0;m<G->vexnum;m++){
+                j=topo[m];//存放了拓扑有序序列
+                p=G->vertices[j].firstarc;
+                for(;p!=NULL;p=p->nextarc){
+                    k=p->adjvex;
+                    if(ve[j]+p->weight>ve[k])
+                        ve[k]=ve[j]+p->weight;
+                }//遍历拓扑排序中第m个顶点的边链表
+                //更新被指向节点的ve[k]求最大值
+            }//更新被指向节点的ve[k],求最大值
+            //计算每个事件的最早发生时间ve值
+        }
+        for(j=0;j<G->vexnum;j++){
+            vl[j]=ve[j];//事件最晚发生时间初始化
+            for(m=G->vexnum-1;m>=0;m--){
+                j=topo[m];
+                p=G->vertices[j].firstarc;
+                for(;p!=NULL;p=p->nextarc){
+                    k=p->adjvex;
+                    if(vl[k]-p->weight<vl[j])
+                        vl[j]=vl[k]-p->weight;
+                }//遍历拓扑排序中第m个顶点的边链表
+                //更新被指向节点的vl[k]求最小值
+            }//从拓扑有序序列的最后一个开始
+            //依次计算每个事件的最早发生时间vl值
+            for(m=0;m<G->vexnum;m++){
+                p=G->vertices[m].firstarc;
+                for(;p!=NULL;p=p->nextarc){
+                    k=p->adjvex;
+                    if((ve[m]+p->weight)==vl[k])
+                        printf("<%d,%d>",m,k);
+                }//检查每个顶点的每条边，是否是关键活动
+            }//输出所有的关键活动
+        }
+    }
+}
+```

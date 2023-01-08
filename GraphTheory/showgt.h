@@ -1,139 +1,72 @@
-#ifndef _SHOWGT_CPP_
+#ifndef  _SHOWGT_CPP_
 #define  _SHOWGT_CPP_
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
-//ÏÂÃæ´úÂë½ö°üº¬ÔÚbitree.cppÎÄ¼şÖĞ²Å»áÉúĞ§£¬±»±àÒë 
-#ifdef _BITREE_CPP_
 
-/*** ÒÔÏÂ´úÂëÓÃÓÚ½«Ê÷£¨¶ş²æÁ´±í£©Ğ´ÈëÎÄ¼ş£¬È»ºóÓÃä¯ÀÀÆ÷´ò¿ªÃûÎªfilenameÎÄ¼ş¼´¿É²é¿´Ê÷/Í¼ ***/
-//ÏÈĞò±éÀú½«¸ù½áµãµÄ±ßÈëÎÄ¼şfp,Êä³öÊ±value¿ÉÒÔ¸Ä³Éid£¬LcºÍRc·Ö±ğ±íÊ¾±ßÉÏµÄÈ¨Öµ£¬ÕâÀïÓÃÓÚ±êÊ¶×óÓÒº¢×Ó 
-//source: %d ¸¸½ÚµãĞÅÏ¢£» target: %d ×Ó½ÚµãĞÅÏ¢; rela: xx ±ßÉÏÈ¨ÖµĞÅÏ¢£» type: resolved ÓÃ´¦²»Çå³ş 
-void writeTree(bNode *root,FILE *fp){
-	if (root){
-		if (root->lchild){ 
-			fprintf(fp,"{source: '%d', target: '%d', 'rela': 'Lc', type: 'resolved'},\n",root->data.value,root->lchild->data.value); 
-			writeTree(root->lchild,fp);
-		}
-		if (root->rchild){
-			fprintf(fp,"{source: '%d', target: '%d', 'rela': 'Rc', type: 'resolved'},\n",root->data.value,root->rchild->data.value);
-			writeTree(root->rchild,fp);
-		}
-	}
-} 
 
-//µ÷ÓÃ´Ëº¯Êı¼´¿ÉÉú³ÉfilenameÎÄ¼ş(ÎÄ¼şÃûÓÃ.html½áÎ²£©£¬ÓÃchromeä¯ÀÀÆ÷²é¿´ 
-void saveTree(bNode *root,const char filename[]){
+//ä¿å­˜å›¾æ•°æ®ä¸ºhtmlæ–‡ä»¶ï¼Œä¾›æµè§ˆå™¨æŸ¥çœ‹
+void writeGraph(Graph *g,FILE *fp){
+	for (int i = 0; i < g->nv; ++i) // ä¸ºäº†æ˜¾ç¤ºç‹¬ç«‹ç»“ç‚¹
+		fprintf(fp, "{source: '%d', target: '%d', 'rela': '', type: 'resolved'},\n", g->v[i].id,g->v[i].id);
+	if (g->weighted) 
+		for (int i = 0; i < g->ne; ++i)	
+			fprintf(fp, "{source: '%d', target: '%d', 'rela': '%d', type: 'resolved'},\n",g->e[i].h,g->e[i].t, g->e[i].w);
+	else																	
+		for (int i = 0; i < g->ne; ++i)
+			fprintf(fp,"{source: '%d', target: '%d', 'rela': '', type: 'resolved'},\n",g->e[i].h,g->e[i].t);
+}
+
+//ä¿å­˜å›¾ä¸ºhtmlæ–‡ä»¶ï¼Œç‚¹å‡»å¯å±•ç¤ºå›¾
+void saveGraph(Graph *g,const char filename[]){
 	FILE *fp = fopen(filename,"wb");
 	if (!fp) {
-		printf("´ò¿ªĞ´ÈëÎÄ¼ş³ö´í£¡\n");
+		printf("æ‰“å¼€å†™å…¥æ–‡ä»¶å‡ºé”™ï¼\n");
 		exit(0);
-	} 
-	
-	//¶ÁÈ¡Í·²¿ÎÄ¼ş£¬¶ş½øÖÆ·½Ê½Ğ´ÈëfilenameÎÄ¼ş 
+	}
+	//è¯»å–å¤´éƒ¨æ–‡ä»¶ï¼ŒäºŒè¿›åˆ¶æ–¹å¼å†™å…¥filenameæ–‡ä»¶
 	FILE *fh = fopen("head.txt","rb");
-	fseek(fh,0,SEEK_END); 
-	long fsize = ftell(fh); 
+	fseek(fh,0,SEEK_END);
+	unsigned long fsize = ftell(fh);
 	rewind(fh);
 	unsigned char *dataArray;
 	dataArray = (unsigned char *)malloc(sizeof(unsigned char)*fsize);
 	if (!dataArray) {
-		printf("ÎÄ¼şÌ«´ó£¬ÄÚ´æ²»¹»£¬¶ÁÈë´íÎó!\n");
+		printf("æ–‡ä»¶å¤ªå¤§ï¼Œå†…å­˜ä¸å¤Ÿï¼Œè¯»å…¥é”™è¯¯! %d\n",fsize);
 		exit(0);
 	}
-	fread(dataArray,sizeof(unsigned char),fsize,fh); //¶ÁÈ¡ÎÄ¼ş
-	fwrite(dataArray, sizeof(unsigned char),fsize,fp);//Ğ´ÈëÎÄ¼ş 
+	fread(dataArray,sizeof(unsigned char),fsize,fh); //è¯»å–æ–‡ä»¶
+	fwrite(dataArray, sizeof(unsigned char),fsize,fp);//å†™å…¥æ–‡ä»¶
 	free(dataArray);
 	fclose(fh);
-	
-	//½«Ê÷µÄĞÅÏ¢Ğ´ÈëfilenameÎÄ¼ş 
+
+	//å°†å›¾çš„ä¿¡æ¯å†™å…¥filenameæ–‡ä»¶
 	fprintf(fp,"\n\nvar links = \n[\n");
-	writeTree(root,fp);
+	writeGraph(g,fp);
 	fprintf(fp,"\n];");
-	
-	//¶ÁÈ¡Î²²¿ÎÄ¼ş£¬¶ş½øÖÆ·½Ê½Ğ´ÈëfilenameÎÄ¼ş 
-	fh = fopen("tail.txt","rb");
-	fseek(fh,0,SEEK_END); 
-	fsize = ftell(fh); 
+
+	//è¯»å–å°¾éƒ¨æ–‡ä»¶ï¼ŒäºŒè¿›åˆ¶æ–¹å¼å†™å…¥filenameæ–‡ä»¶
+	if (g->dirctional)//æœ‰å‘å›¾
+		fh = fopen("tail.txt","rb");
+	else //æ— å‘å›¾
+		fh = fopen("tail1.txt","rb");
+	fseek(fh,0,SEEK_END);
+	fsize = ftell(fh);
 	rewind(fh);
 	dataArray = (unsigned char *)malloc(sizeof(unsigned char)*fsize);
 	if (!dataArray) {
-		printf("ÎÄ¼şÌ«´ó£¬ÄÚ´æ²»¹»£¬¶ÁÈë´íÎó!\n");
+		printf("æ–‡ä»¶å¤ªå¤§ï¼Œå†…å­˜ä¸å¤Ÿï¼Œè¯»å…¥é”™è¯¯! %d\n",fsize);
 		exit(0);
 	}
-	fread(dataArray,sizeof(unsigned char),fsize,fh); //¶ÁÈ¡ÎÄ¼ş
-	fwrite(dataArray, sizeof(unsigned char),fsize,fp);//Ğ´ÈëÎÄ¼ş 
+	fread(dataArray,sizeof(unsigned char),fsize,fh); //è¯»å–æ–‡ä»¶
+	fwrite(dataArray, sizeof(unsigned char),fsize,fp);//å†™å…¥æ–‡ä»¶
 	free(dataArray);
 	fclose(fh);
-	
+
 	fclose(fp);
+
 }
 #endif
 
-//ÏÂÃæ´úÂë½ö°üº¬ÔÚhumantree.cppÎÄ¼şÖĞ²Å»áÉúĞ§ºÍ±»±àÒë 
-#ifdef _HUFFMANTREE_CPP_
-void writeTree(HTNode t[],int ridx,FILE *fp){
-	if (ridx>=0 && t[ridx].w>0){
-		if (t[ridx].lchild>=0){ 
-			fprintf(fp,"{source: '%d-%d', target: '%d-%d', 'rela': '0', type: 'resolved'},\n",ridx,t[ridx].w,t[ridx].lchild,t[t[ridx].lchild].w); 
-			writeTree(t,t[ridx].lchild,fp);
-		}
-		if (t[ridx].rchild>=0){
-			fprintf(fp,"{source: '%d-%d', target: '%d-%d', 'rela': '1', type: 'resolved'},\n",ridx,t[ridx].w,t[ridx].rchild,t[t[ridx].rchild].w);
-			writeTree(t,t[ridx].rchild,fp);
-		}
-	}
-} 
-
-//µ÷ÓÃ´Ëº¯Êı¼´¿ÉÉú³ÉfilenameÎÄ¼ş(ÎÄ¼şÃûÓÃ.html½áÎ²£©£¬ÓÃchromeä¯ÀÀÆ÷²é¿´ 
-void saveTree(HTNode root[],int rt,const char filename[]){
-	FILE *fp = fopen(filename,"wb");
-	if (!fp) {
-		printf("´ò¿ªĞ´ÈëÎÄ¼ş³ö´í£¡\n");
-		exit(0);
-	} 
-	
-	//¶ÁÈ¡Í·²¿ÎÄ¼ş£¬¶ş½øÖÆ·½Ê½Ğ´ÈëfilenameÎÄ¼ş 
-	FILE *fh = fopen("head.txt","rb");
-	fseek(fh,0,SEEK_END); 
-	long fsize = ftell(fh); 
-	rewind(fh);
-	unsigned char *dataArray;
-	dataArray = (unsigned char *)malloc(sizeof(unsigned char)*fsize);
-	if (!dataArray) {
-		printf("ÎÄ¼şÌ«´ó£¬ÄÚ´æ²»¹»£¬¶ÁÈë´íÎó!\n");
-		exit(0);
-	}
-	fread(dataArray,sizeof(unsigned char),fsize,fh); //¶ÁÈ¡ÎÄ¼ş
-	fwrite(dataArray, sizeof(unsigned char),fsize,fp);//Ğ´ÈëÎÄ¼ş 
-	free(dataArray);
-	fclose(fh);
-	
-	//½«Ê÷µÄĞÅÏ¢Ğ´ÈëfilenameÎÄ¼ş 
-	fprintf(fp,"\n\nvar links = \n[\n");
-	writeTree(root,rt,fp);//mĞèÒªĞŞ¸Ä£¬Èç¹û256¸ö×Ö·ûÃ»ÓĞÈ«²¿³öÏÖ 
-	fprintf(fp,"\n];");
-	
-	//¶ÁÈ¡Î²²¿ÎÄ¼ş£¬¶ş½øÖÆ·½Ê½Ğ´ÈëfilenameÎÄ¼ş 
-	fh = fopen("tail.txt","rb");
-	fseek(fh,0,SEEK_END); 
-	fsize = ftell(fh); 
-	rewind(fh);
-	dataArray = (unsigned char *)malloc(sizeof(unsigned char)*fsize);
-	if (!dataArray) {
-		printf("ÎÄ¼şÌ«´ó£¬ÄÚ´æ²»¹»£¬¶ÁÈë´íÎó!\n");
-		exit(0);
-	}
-	fread(dataArray,sizeof(unsigned char),fsize,fh); //¶ÁÈ¡ÎÄ¼ş
-	fwrite(dataArray, sizeof(unsigned char),fsize,fp);//Ğ´ÈëÎÄ¼ş 
-	free(dataArray);
-	fclose(fh);
-	
-	fclose(fp);
-}	
-	
-#endif
-
- 
-#endif 
