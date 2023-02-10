@@ -2,10 +2,10 @@
 using namespace std;
 const int maxn = 22;
 int g[maxn][maxn];
-int n,N=21;
-int pth[maxn];
+int n,N=21;//混淆目的地和最大站
+int pth[maxn];//pth意义模糊
 int f[maxn];
-int getfather(int x){
+int getfather(int x){//并查集编写失误
     return f[x]==x?x:f[x]=getfather(f[x]);
 }
 int dfs(int x,int *vis,int len){
@@ -55,19 +55,19 @@ int main(){
             // }else if(getfather(a)!=getfather(b)){
             //     f[getfather(a)]=getfather(b);
             // }
-            int x=getfather(a),y=getfather(b);
+            int x=getfather(a),y=getfather(b);//并查集合并失误
             if(x!=y){
                 f[x]=y;
             }
         }
         // cout<<"CASE "<<cnt<<endl;
-        printf("CASE %d:\n",cnt);
+        printf("CASE %d:\n",cnt);//格式输出遗漏
         int vis[maxn];
         // vis[1]=1;
         int sum=0;
         memset(vis,0,sizeof(vis));
         if(getfather(1)==getfather(n))
-            sum=dfs(1,vis,0);
+            sum=dfs(1,vis,0);//vis使用不简洁
         printf("There are %d routes from the firestation to streetcorner %d.\n",sum,n);
     }
     return 0;
