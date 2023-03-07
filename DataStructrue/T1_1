@@ -1,0 +1,88 @@
+#include<bits/stdc++.h>
+using namespace std;
+struct BT{
+    int data;
+    BT *lchild,*rchild;
+};
+
+void FirstOrderTraverse(BT *T){
+    if(!T)return;
+    else{
+        cout<<T->data<<endl;
+        FirstOrderTraverse(T->lchild);
+        FirstOrderTraverse(T->rchild);
+    }
+}
+void InOrderTraverse(BT* T){
+    if(!T)return;
+    else{
+        InOrderTraverse(T->lchild);
+        cout<<T->data<<endl;
+        InOrderTraverse(T->rchild);
+    }
+}
+void LastOrderTraverse(BT *T){
+    if(!T)return;
+    else{
+        InOrderTraverse(T->lchild);
+        InOrderTraverse(T->rchild);
+        cout<<T->data<<endl;
+    }
+}
+
+bool ok(LinkList* head){
+    // bool ans=false;
+    ElemType e[maxn];
+    LinkList *p=head->next;
+    int count=0;
+    while(p){
+        e[count++]=p->val;
+        p=p->next;
+    }
+    for(int i=0;i<count;i++){
+        if(e[i]!=e[count-i]){
+            return false;
+        }
+    }
+    return true;
+}
+
+void build(BT* root){
+    ElemType e;
+    cin>>e;
+    if(!e){
+        free(root);
+        return;
+    }
+    else{
+        root->val=e;
+        root->lchild=(BT*)malloc(sizeof(BT));
+        if(!root->lchild)exit(0);
+        build(root->lchild);
+        root->rchild=(BT*)malloc(sizeof(BT));
+        if(!root->rchild)exit(0);
+        build(root—->rchild);
+    }
+}
+/*
+    以下算法错误，左孩子右孩子即使满足排序也不能说明是二叉排序树
+    需要用中序遍历的方法来保证有序序列
+*/
+bool check(BT* T){
+    if(!T)return true;
+    else{
+        if(T->lchild){
+            if (!check(T->lchild))
+                return false;
+            if(T->lchild>T->val)
+                return false;
+        }
+        if(T->rchild){
+            if(!check(T->rchild))
+                return false;
+            if(T->rchild<T->val)
+                return false;
+        }
+        return true;
+    }
+}
